@@ -36,51 +36,122 @@ makeham <- function(x){
   a + b * exp(c * x)
 }
 
-# Brownian motion
+# Parameters for simulation
+t_0 = 50
+tau = 70
+t_step <- 1
+n <- 10000
+n_simulations <- 1000
+time_steps <- seq(0, tau-t_0, t_step)
+
 # Wiener process brownian motion
 r <- 0.015
 sigma <- 0.06
 
+# Helper function to plot simulated brownian motions
+plot_simulations <- function(simulations){
+    Xs <- data.frame(simulations)
+    Xs$t <- time_steps+t_0
+    X_melt <- melt(Xs, id.vars="t")
+    colnames(X_melt) <- c("t", "run", "return")
+    mean_res <- mean(simulations[dim(simulations)[1],])
 
-# A.1
-# Portfolio of 10000 contracts, with 50 yer old individuals.
-# All turned 50 at new years.
-# Benefits payed at age of 70
-# Assume no charge is paid on the initial investment but will collect a annual fee of 0.1 % each yera.
-# Calculate the risk neutral value of the benefits for one such contract 
-# and calculate the risk-neutral value of the total gain for the insurer
+    p <- ggplot(data=X_melt,aes(x=t, y=return, group=run)) +
+        theme_minimal() +
+        geom_line(size=0.2, alpha=0.1,color='black')+ 
+        stat_summary(fun.y=mean,geom="line",lwd=1,color='darkred',alpha=0.5,aes(group=1))+
+        geom_text(aes(label=round(mean_res,2),y=mean_res,x=tau+1),
+            vjust=0,col='darkred',size=3)
+    
+    return(p)
+}
 
-annual_fee <- 0.001
-n <- 10000
-t_0 = 50
-tau = 70
-t_step <- 1/12
+plot_histogram <- function(series){
+    p  <- ggplot(data.frame(series), aes(x=series,y=..density..)) + 
+        geom_histogram(bins=20) + 
+        geom_density(alpha=.2)+
+        theme_minimal()+
+        geom_segment(aes(x = mean(series),xend=mean(series), y = 0, yend = 2),col='darkred',size=0.5)+
+        geom_text(aes(label=round(mean(series),4),y=-0.1,x=mean(series)),
+            vjust=0,col='darkred',size=3)
+    return(p)
+}
 
-time_steps <- seq(0, tau-t_0, t_step)
+
+###### Simulate price development of the risky asset X(t)
 
 sim_X <- function(){
     W <- rnorm(length(time_steps), mean = 0, sd = 1)
     W_cum <- cumsum(W)
-    X <- 1+exp((r - sigma^2/2)*time_steps + sigma * W_cum)
+    X <- exp((r - sigma^2/2)*time_steps)+ sigma * W_cum
     return(X)
 }
-# Plot lineplot
-plot(time_steps+t_0,sim_X(), type = "l", col = "black",alpha=0.1, xlab = "Time", ylab = "X(t)", main = "Simulated X(t)")
 
-# Simulate 10000 times ant plot
-Xs <- replicate(1000, sim_X())
+############ A.1
+annual_fee <- 0.001
+X_sim <- sim_X()
+S_t <- exp(-makeham(t_0+time_steps))
+portfolio_value <- replicate(
+    n_simulations,
+    n*(sim_X()*(1 -annual_fee)^(time_steps))
+)
 
-Xs <- data.frame(Xs)
-Xs$t <- time_steps+t_0
-X_melt <- melt(Xs, id.vars="t")
-colnames(X_melt) <- c("t", "run", "return")
+n_survivors <- n*(exp(-sum(t_step*makeham(time_steps))))
+policy_holder_value <- portfolio_value/n_survivors
 
-p = ggplot(X_melt,aes(x=t, y=return, group=run)) +
-    theme_minimal() +
-    geom_line(size=0.2, alpha=0.1)
-p
+p <- plot_simulations(policy_holder_value)
+ggsave("plots/a1_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-# Calculate the risk neutral value of the benefits for one such contrac
+risk_neutral_value_a1 <- policy_holder_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+p <- plot_histogram(risk_neutral_value_a1)
+ggsave("plots/a1_price.jpg", p, width = 15, height = 10, units = "cm")
 
-X = sim_X()
-survival_rate <- makeham(time_steps)
+################ A.2
+initial_fee <- 1-(1 -annual_fee)^(tau-t_0)
+X_sim <- sim_X()
+S_t <- exp(-makeham(t_0+time_steps))
+portfolio_value <- replicate(
+    n_simulations,
+    n*(sim_X()*(1-initial_fee))
+)
+
+n_survivors <- n*(exp(-sum(t_step*makeham(time_steps))))
+policy_holder_value <- portfolio_value/n_survivors
+
+p <- plot_simulations(policy_holder_value)
+ggsave("plots/a2_sim.jpg", p, width = 15, height = 10, units = "cm")
+
+risk_neutral_value_a1 <- policy_holder_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+p <- plot_histogram(risk_neutral_value_a1)
+ggsave("plots/a2_price.jpg", p, width = 15, height = 10, units = "cm")
+
+
+############## A.3
+inheritence_tax <- 0.20
+n <- 10000
+X_sim <- sim_X()
+S_t <- exp(-makeham(t_0+time_steps))
+portfolio_value <- replicate(1000,n*(sim_X()*(1 - (1-S_t)*inheritence_tax)))
+
+n_survivors <- n*(exp(-sum(t_step*makeham(time_steps))))
+policy_holder_value <- portfolio_value/n_survivors
+
+p <- plot_simulations(policy_holder_value)
+ggsave("plots/a3_sim.jpg", p, width = 15, height = 10, units = "cm")
+
+risk_neutral_value_a1 <- policy_holder_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+p <- plot_histogram(risk_neutral_value_a1)
+ggsave("plots/a3_price.jpg", p, width = 15, height = 10, units = "cm")
+
+
+# A.4
+
+#2 Simulate 100 times ant plot
+Xs <- replicate(10, sim_X())
+
+p <- plot_simulations(Xs)
+# Save plot
+ggsave("plots/a4_ass_simulation.jpg", p, width = 15, height = 10, units = "cm")
+p <- plot_histogram(Xs[20,])
+ggsave("plots/a3_ass_distribution.jpg", p, width = 15, height = 10, units = "cm")
+
