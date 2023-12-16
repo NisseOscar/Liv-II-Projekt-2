@@ -87,22 +87,34 @@ sim_X <- function(){
     return(X)
 }
 
+
+####### Simulate survival percentage
+p_t <- function(t_0,t){
+  exp(-integrate(makeham, t_0, t)$value
+  )
+}
+
+sim_S <- function(){
+    S <- rep(n,length(time_steps))
+    for (i in 2:length(time_steps)){
+        p <- p_t(time_steps[i-1],time_steps[i])
+        S[i] <- round(rbinom(1,S[i-1],p))
+    }
+    return(S/n)
+}
+
 ############ A.1
 annual_fee <- 0.001
 X_sim <- sim_X()
-S_t <- exp(-makeham(t_0+time_steps))
 portfolio_value <- replicate(
     n_simulations,
-    n*(sim_X()*(1 -annual_fee)^(time_steps))
+    sim_X()*(1 -annual_fee)^(time_steps)/sim_S()
 )
 
-n_survivors <- n*(exp(-sum(t_step*makeham(time_steps))))
-policy_holder_value <- portfolio_value/n_survivors
-
-p <- plot_simulations(policy_holder_value)
+p <- plot_simulations(portfolio_value)
 ggsave("plots/a1_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-risk_neutral_value_a1 <- policy_holder_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+risk_neutral_value_a1 <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
 p <- plot_histogram(risk_neutral_value_a1)
 ggsave("plots/a1_price.jpg", p, width = 15, height = 10, units = "cm")
 
@@ -112,16 +124,13 @@ X_sim <- sim_X()
 S_t <- exp(-makeham(t_0+time_steps))
 portfolio_value <- replicate(
     n_simulations,
-    n*(sim_X()*(1-initial_fee))
+    sim_X()*(1-initial_fee)/sim_S()
 )
 
-n_survivors <- n*(exp(-sum(t_step*makeham(time_steps))))
-policy_holder_value <- portfolio_value/n_survivors
-
-p <- plot_simulations(policy_holder_value)
+p <- plot_simulations(portfolio_value)
 ggsave("plots/a2_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-risk_neutral_value_a1 <- policy_holder_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+risk_neutral_value_a1 <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
 p <- plot_histogram(risk_neutral_value_a1)
 ggsave("plots/a2_price.jpg", p, width = 15, height = 10, units = "cm")
 
@@ -129,29 +138,36 @@ ggsave("plots/a2_price.jpg", p, width = 15, height = 10, units = "cm")
 ############## A.3
 inheritence_tax <- 0.20
 n <- 10000
-X_sim <- sim_X()
 S_t <- exp(-makeham(t_0+time_steps))
-portfolio_value <- replicate(1000,n*(sim_X()*(1 - (1-S_t)*inheritence_tax)))
+portfolio_value <- replicate(
+    n_simulations,
+    sim_X()*(1 - (1-sim_S())*inheritence_tax)/sim_S()
+)
 
-n_survivors <- n*(exp(-sum(t_step*makeham(time_steps))))
-policy_holder_value <- portfolio_value/n_survivors
-
-p <- plot_simulations(policy_holder_value)
+p <- plot_simulations(portfolio_value)
 ggsave("plots/a3_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-risk_neutral_value_a1 <- policy_holder_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+risk_neutral_value_a1 <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
 p <- plot_histogram(risk_neutral_value_a1)
 ggsave("plots/a3_price.jpg", p, width = 15, height = 10, units = "cm")
 
 
 # A.4
 
+# 1 Simulate 100 times
+S <- replicate(100, sim_S())*n
+p <- plot_simulations(S)
+# Save plot
+ggsave("plots/a4_survival_simulation.jpg", p, width = 15, height = 10, units = "cm")
+p <- plot_histogram(S[20,])
+ggsave("plots/a4_survival_distribution.jpg", p, width = 15, height = 10, units = "cm")
+
+
 #2 Simulate 100 times ant plot
 Xs <- replicate(10, sim_X())
-
 p <- plot_simulations(Xs)
 # Save plot
 ggsave("plots/a4_ass_simulation.jpg", p, width = 15, height = 10, units = "cm")
 p <- plot_histogram(Xs[20,])
-ggsave("plots/a3_ass_distribution.jpg", p, width = 15, height = 10, units = "cm")
+ggsave("plots/a4_ass_distribution.jpg", p, width = 15, height = 10, units = "cm")
 
