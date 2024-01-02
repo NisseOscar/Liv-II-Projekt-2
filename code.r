@@ -10,7 +10,7 @@ library(reshape2)
 #### Parameters
 
 # Set Seed
-set.seed(123)
+set.seed(1234)
 
 # Makeham function
 a <- 3.5*10^(-4)	
@@ -87,6 +87,9 @@ sim_S <- function(){
     return(S/n)
 }
 
+expected_return_without_fee = 1/p_t(50,70)
+expected_return_without_fee
+
 ############ A.1
 annual_fee <- 0.001
 X_sim <-  replicate(n_simulations,sim_X())
@@ -98,11 +101,11 @@ p <- plot_simulations(portfolio_value)
 ggsave("plots/a1_sim.jpg", p, width = 15, height = 10, units = "cm")
 
 # Plot distribution of risk neutral value
-arisk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
-p <- plot_histogram(arisk_neutral_value)
+risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+p <- plot_histogram(risk_neutral_value)
 ggsave("plots/a1_price.jpg", p, width = 15, height = 10, units = "cm")
-mean(arisk_neutral_value)
-z*sd(arisk_neutral_value)
+mean(risk_neutral_value)
+z*sd(risk_neutral_value)
 
 # Plot distribution of policy issuer value
 acc_fee <- (1-(1 -annual_fee)^(tau-t_0))
@@ -119,11 +122,11 @@ portfolio_value <- X_sim*(1-initial_fee)/S_sim
 p <- plot_simulations(portfolio_value)
 ggsave("plots/a2_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-arisk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
-p <- plot_histogram(arisk_neutral_value)
+risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
+p <- plot_histogram(risk_neutral_value)
 ggsave("plots/a2_price.jpg", p, width = 15, height = 10, units = "cm")
-mean(arisk_neutral_value)
-z*sd(arisk_neutral_value)
+mean(risk_neutral_value)
+z*sd(risk_neutral_value)
 
 
 ############## A.3
@@ -131,13 +134,13 @@ inheritence_tax <- 0.20
 X_sim <-  replicate(n_simulations,sim_X())
 S_sim <- replicate(n_simulations,sim_S())
 portfolio_value <- X_sim*(1 - (1-S_sim)*inheritence_tax)/S_sim
-
+S_sim
 
 p <- plot_simulations(portfolio_value)
 ggsave("plots/a3_sim.jpg", p, width = 15, height = 10, units = "cm")
 
 risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
-p <- plot_histogram(arisk_neutral_value)
+p <- plot_histogram(risk_neutral_value)
 ggsave("plots/a3_price.jpg", p, width = 15, height = 10, units = "cm")
 mean(risk_neutral_value)
 z*sd(risk_neutral_value)
@@ -148,9 +151,7 @@ policy_issuer_value = n*X_sim_20*(1-S_sim_20)*inheritence_tax*exp(-r*(length(tim
 mean(policy_issuer_value)
 z*sd(policy_issuer_value)
 
-
-# A.4
-
+############## A.4
 # 1 Simulate 100 times
 S <- replicate(100, sim_S())*n
 p <- plot_simulations(S)
@@ -168,3 +169,6 @@ ggsave("plots/a4_ass_simulation.jpg", p, width = 15, height = 10, units = "cm")
 p <- plot_histogram(Xs[21,])
 ggsave("plots/a4_ass_distribution.jpg", p, width = 15, height = 10, units = "cm")
 
+# Calculate New Inheritence fee to match other fee structures
+f_star = 0.0198/(1-p_t(50,70))
+f_star
