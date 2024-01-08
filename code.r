@@ -87,9 +87,6 @@ sim_S <- function(){
     return(S/n)
 }
 
-expected_return_without_fee = 1/p_t(50,70)
-expected_return_without_fee
-
 ############ A.1
 annual_fee <- 0.001
 X_sim <-  replicate(n_simulations,sim_X())
@@ -101,14 +98,15 @@ p <- plot_simulations(portfolio_value)
 ggsave("plots/a1_sim.jpg", p, width = 15, height = 10, units = "cm")
 
 # Plot distribution of risk neutral value
-risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
-p <- plot_histogram(risk_neutral_value)
+p <- plot_histogram(portfolio_value[length(time_steps),])
 ggsave("plots/a1_price.jpg", p, width = 15, height = 10, units = "cm")
+
+# Calculate Risk neutral Value at t=20
+risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))*p_t(50,70)
 mean(risk_neutral_value)
 z*sd(risk_neutral_value)
 
-# Plot distribution of policy issuer value
-acc_fee <- (1-(1 -annual_fee)^(tau-t_0))
+acc_fee = 1-(1 -annual_fee)^(tau-t_0)
 policy_issuer_value = n*acc_fee*X_sim[length(time_steps),]*exp(-r*(length(time_steps)-1))
 mean(policy_issuer_value)
 z*sd(policy_issuer_value)
@@ -122,26 +120,28 @@ portfolio_value <- X_sim*(1-initial_fee)/S_sim
 p <- plot_simulations(portfolio_value)
 ggsave("plots/a2_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
-p <- plot_histogram(risk_neutral_value)
+p <- plot_histogram(portfolio_value[length(time_steps),])
 ggsave("plots/a2_price.jpg", p, width = 15, height = 10, units = "cm")
+
+# Calculate Risk neutral Value at t=20
+risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))*p_t(50,70)
 mean(risk_neutral_value)
 z*sd(risk_neutral_value)
-
 
 ############## A.3
 inheritence_tax <- 0.20
 X_sim <-  replicate(n_simulations,sim_X())
 S_sim <- replicate(n_simulations,sim_S())
 portfolio_value <- X_sim*(1 - (1-S_sim)*inheritence_tax)/S_sim
-S_sim
 
 p <- plot_simulations(portfolio_value)
 ggsave("plots/a3_sim.jpg", p, width = 15, height = 10, units = "cm")
 
-risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))
-p <- plot_histogram(risk_neutral_value)
+p <- plot_histogram(portfolio_value[length(time_steps),])
 ggsave("plots/a3_price.jpg", p, width = 15, height = 10, units = "cm")
+
+# Calculate Risk neutral Value at t=20
+risk_neutral_value <- portfolio_value[length(time_steps),]*exp(-r*(length(time_steps)-1))*p_t(50,70)
 mean(risk_neutral_value)
 z*sd(risk_neutral_value)
 
